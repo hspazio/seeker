@@ -7,9 +7,9 @@ import (
 )
 
 type Job struct {
-	company string
-	title   string
-	link    string
+	Company string
+	Title   string
+	Link    string
 }
 
 type Parser struct {
@@ -52,9 +52,9 @@ func parseRemoteok() ([]Job, error) {
 		title, _ := jobList.Eq(i).Attr("data-search")
 		link, _ := jobList.Eq(i).Attr("data-url")
 		job := Job{
-			company: strings.TrimSpace(company),
-			title:   strings.TrimSpace(title),
-			link:    strings.TrimSpace(link),
+			Company: strings.TrimSpace(company),
+			Title:   strings.TrimSpace(title),
+			Link:    strings.TrimSpace(link),
 		}
 
 		if company != "" && title != "" {
@@ -82,9 +82,9 @@ func parseWeworkremotely() ([]Job, error) {
 		title := jobList.Eq(i).Find(".title").Text()
 		link, _ := jobList.Eq(i).Attr("href")
 		job := Job{
-			company: strings.TrimSpace(company),
-			title:   strings.TrimSpace(title),
-			link:    strings.TrimSpace(link),
+			Company: strings.TrimSpace(company),
+			Title:   strings.TrimSpace(title),
+			Link:    strings.TrimSpace(link),
 		}
 
 		if company != "" && title != "" {
@@ -112,9 +112,9 @@ func parseRemoteco() ([]Job, error) {
 		title := jobList.Eq(i).Find(".position > h3").Text()
 		link, _ := jobList.Eq(i).Find("a").Attr("href")
 		job := Job{
-			company: strings.TrimSpace(company),
-			title:   strings.TrimSpace(title),
-			link:    strings.TrimSpace(link),
+			Company: strings.TrimSpace(company),
+			Title:   strings.TrimSpace(title),
+			Link:    strings.TrimSpace(link),
 		}
 
 		if company != "" && title != "" {
