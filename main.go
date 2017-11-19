@@ -1,8 +1,8 @@
 package main
 
 import (
-	"../seeker-go/glassdoor"
-	"../seeker-go/parser"
+	"./glassdoor"
+	"./parser"
 	"fmt"
 	"os"
 )
