@@ -56,9 +56,12 @@ func (c *Client) SearchEmployer(employer string) (Employer, error) {
 	// fmt.Println(string(body))
 	json.Unmarshal(body, &parsed)
 
+	if parsed.Status != "OK" {
+		return result, errors.New(parsed.Status)
+	}
+
 	employers := parsed.Response.Employers
 	found := false
-
 	for _, employer := range employers {
 		if employer.ExactMatch {
 			result = employer
