@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -12,26 +13,64 @@ type Client struct {
 	id  string
 	key string
 }
+type Employer struct {
+	Id                            int    `json:"id"`
+	Name                          string `json:"name"`
+	Website                       string `json:"website"`
+	ExactMatch                    bool   `json:"exactMatch"`
+	Industry                      string `json:"industry"`
+	NumberOfRatings               int    `json:"NumberOfRatings"`
+	OverallRating                 string `json:"overallRating"`
+	RatingDescription             string `json:"ratingDescription"`
+	CultureAndValuesRating        string `json:"cultureAndValuesRating"`
+	SeniorLeadershipRating        string `json:"seniorLeadershipRating"`
+	CompensationAndBenefitsRating string `json:"compensationAndBenefitsRating"`
+	CareerOpportunitiesRating     string `json:"careerOpportunitiesRating"`
+	WorkLifeBalanceRating         string `json:"workLifeBalanceRating"`
+	RecommentToFriendRating       int    `json:"recommendToFriendRating"`
+	SectorName                    string `json:"sectorName"`
+	IndustryName                  string `json:"industryName"`
+}
+type gdResponse struct {
+	Employers []Employer `json:"employers"`
+}
+type gdData struct {
+	Success  string     `json:"success"`
+	Status   string     `json:"status"`
+	Response gdResponse `json:"response"`
+}
 
-func (c *Client) SearchEmployer(employer string) interface{} {
-	var parsed map[string]interface{}
+func (c *Client) SearchEmployer(employer string) (Employer, error) {
+	var parsed gdData
+	var result Employer
 
 	url := c.buildUrl("employers", employer)
-	resp, _ := http.Get(url)
-	body, _ := ioutil.ReadAll(resp.Body)
-	fmt.Println(body)
+	resp, err := http.Get(url)
+	if err != nil {
+		return result, err
+	}
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return result, err
+	}
+	// fmt.Println(string(body))
 	json.Unmarshal(body, &parsed)
 
-	employers := parsed["response"].(map[string]interface{})["employers"].([]interface{})
-	var result map[string]interface{}
+	employers := parsed.Response.Employers
+	found := false
+
 	for _, employer := range employers {
-		if employer.(map[string]interface{})["exactMatch"].(bool) {
-			result = employer.(map[string]interface{})
+		if employer.ExactMatch {
+			result = employer
+			found = true
 			break
 		}
 	}
 
-	return result
+	if found {
+		return result, nil
+	}
+	return result, errors.New("no exact match found")
 }
 
 func (c *Client) buildUrl(action, q string) string {
@@ -41,6 +80,10 @@ func (c *Client) buildUrl(action, q string) string {
 
 func main() {
 	gd := Client{id: os.Getenv("GLASSDOOR_ID"), key: os.Getenv("GLASSDOOR_KEY")}
-	res := gd.SearchEmployer("symantec")
-	fmt.Println(res)
+	empl, err := gd.SearchEmployer("Google")
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		fmt.Println(empl)
+	}
 }
