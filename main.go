@@ -9,6 +9,45 @@ import (
 	"os"
 )
 
+func saveCompany(company string, coll *mgo.Collection, gd glassdoor.Client) {
+	result := glassdoor.Employer{}
+	err := coll.Find(bson.M{"name": company}).One(&result)
+	if err != nil {
+		empl, err := gd.SearchEmployer(company)
+		if err != nil {
+			fmt.Println("No employer found:", company)
+			err = coll.Insert(bson.M{"name": company})
+			if err != nil {
+				panic(company)
+			}
+		} else {
+			fmt.Println("Glassdoor:", empl)
+			err = coll.Insert(result)
+			if err != nil {
+				panic(company)
+			}
+		}
+	} else {
+		fmt.Println("Cached:", result)
+	}
+}
+
+func saveJob(job parser.Job, coll *mgo.Collection) {
+	var result interface{}
+	err := coll.Find(bson.M{
+		"company": job.Company,
+		"title":   job.Title,
+		"link":    job.Link,
+	}).One(&result)
+
+	if err != nil {
+		fmt.Println("Saving job:", job)
+		coll.Insert(job)
+	} else {
+		fmt.Println("Job exists:", job)
+	}
+}
+
 func main() {
 	session, err := mgo.Dial("localhost")
 	if err != nil {
@@ -16,6 +55,7 @@ func main() {
 	}
 	defer session.Close()
 	companiesColl := session.DB("seeker").C("companies")
+	jobsColl := session.DB("seeker").C("jobs")
 
 	gd := glassdoor.Client{Id: os.Getenv("GLASSDOOR_ID"), Key: os.Getenv("GLASSDOOR_KEY")}
 
@@ -31,23 +71,8 @@ func main() {
 			fmt.Println(err)
 		}
 		for _, job := range jobs {
-			result := glassdoor.Employer{}
-			err = companiesColl.Find(bson.M{"name": job.Company}).One(&result)
-			if err != nil {
-				empl, err := gd.SearchEmployer(job.Company)
-				if err != nil {
-					// TODO: save empty record to db so we won't check glassdoor again
-					fmt.Println("No employer found:", job.Company)
-				} else {
-					// TODO: save new record to db
-					fmt.Println("Glassdoor:", empl)
-				}
-			} else {
-				fmt.Println("Cached:", result)
-			}
-
-			// TODO: save job if it doesn't exist
-			fmt.Println("Saving job:", job)
+			saveCompany(job.Company, companiesColl, gd)
+			saveJob(job, jobsColl)
 		}
 	}
 }
