@@ -1,25 +1,30 @@
 package parser
 
 import (
-	"github.com/PuerkitoBio/goquery"
 	"net/http"
 	"strings"
+
+	"github.com/PuerkitoBio/goquery"
 )
 
+// Job spec
 type Job struct {
 	Company string
 	Title   string
 	Link    string
 }
 
+// Parser is the component representing the site to parse
 type Parser struct {
 	Name string
 }
 
+// New creates a new parser by name
 func New(name string) Parser {
 	return Parser{Name: name}
 }
 
+// Parse starts parsing the site
 func (p Parser) Parse() ([]Job, error) {
 	var jobs []Job
 	var err error
@@ -36,10 +41,11 @@ func (p Parser) Parse() ([]Job, error) {
 }
 
 func parseRemoteok() ([]Job, error) {
-	site := "https://remoteok.io/remote-dev-jobs"
+	site := "https://remoteok.io"
+	jobsUrl := site + "/remote-dev-jobs"
 	var jobs []Job
 
-	res, err := http.Get(site)
+	res, err := http.Get(jobsUrl)
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +60,7 @@ func parseRemoteok() ([]Job, error) {
 		job := Job{
 			Company: strings.TrimSpace(company),
 			Title:   strings.TrimSpace(title),
-			Link:    strings.TrimSpace(link),
+			Link:    site + strings.TrimSpace(link),
 		}
 
 		if company != "" && title != "" {
@@ -66,10 +72,11 @@ func parseRemoteok() ([]Job, error) {
 }
 
 func parseWeworkremotely() ([]Job, error) {
-	site := "https://weworkremotely.com/categories/2-programming/jobs#intro"
+	site := "https://weworkremotely.com"
+	jobsUrl := site + "/categories/2-programming/jobs#intro"
 	var jobs []Job
 
-	res, err := http.Get(site)
+	res, err := http.Get(jobsUrl)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +91,7 @@ func parseWeworkremotely() ([]Job, error) {
 		job := Job{
 			Company: strings.TrimSpace(company),
 			Title:   strings.TrimSpace(title),
-			Link:    strings.TrimSpace(link),
+			Link:    site + strings.TrimSpace(link),
 		}
 
 		if company != "" && title != "" {

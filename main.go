@@ -1,12 +1,14 @@
 package main
 
 import (
-	"./glassdoor"
-	"./parser"
 	"fmt"
+	"os"
+
+	"./glassdoor"
+	"./mailer"
+	"./parser"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
-	"os"
 )
 
 func saveCompany(company string, coll *mgo.Collection, gd glassdoor.Client) {
@@ -32,7 +34,7 @@ func saveCompany(company string, coll *mgo.Collection, gd glassdoor.Client) {
 	}
 }
 
-func saveJob(job parser.Job, coll *mgo.Collection) {
+func saveJob(job parser.Job, coll *mgo.Collection) bool {
 	var result interface{}
 	err := coll.Find(bson.M{
 		"company": job.Company,
@@ -43,9 +45,10 @@ func saveJob(job parser.Job, coll *mgo.Collection) {
 	if err != nil {
 		fmt.Println("Saving job:", job)
 		coll.Insert(job)
-	} else {
-		fmt.Println("Job exists:", job)
+		return true
 	}
+	fmt.Println("Job exists:", job)
+	return false
 }
 
 func main() {
@@ -65,6 +68,7 @@ func main() {
 		parser.New("remoteco"),
 	}
 
+	var newJobs []parser.Job
 	for _, parser := range parsers {
 		jobs, err := parser.Parse()
 		if err != nil {
@@ -72,7 +76,14 @@ func main() {
 		}
 		for _, job := range jobs {
 			saveCompany(job.Company, companiesColl, gd)
-			saveJob(job, jobsColl)
+			saved := saveJob(job, jobsColl)
+			if saved {
+				newJobs = append(newJobs, job)
+			}
 		}
+	}
+
+	if len(newJobs) > 0 {
+		mailer.Send(newJobs)
 	}
 }
